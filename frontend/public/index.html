@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Generator</title>
+<style>
+  :root {
+    --slate-900: #0f172a;
+    --slate-700: #334155;
+    --slate-500: #64748b;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --slate-50: #f8fafc;
+    --blue-600: #2563eb;
+    --blue-700: #1d4ed8;
+    --red-600: #dc2626;
+    --green-600: #16a34a;
+    --amber-600: #d97706;
+    --gray-600: #6b7280;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--slate-50);
+    color: var(--slate-700);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--blue-600); }
+
+  h1, h2, h3 { color: var(--slate-900); margin: 0 0 0.5rem 0; }
+
+  .app-header {
+    background: #fff;
+    border-bottom: 1px solid var(--slate-200);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .app-header-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 0 1.25rem;
+  }
+
+  .brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    margin-bottom: 0.75rem;
+  }
+
+  .brand small {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--slate-500);
+    margin-top: 0.15rem;
+  }
+
+  nav.tabs {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  nav.tabs button {
+    background: none;
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--slate-500);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  nav.tabs button:hover {
+    color: var(--slate-900);
+  }
+
+  nav.tabs button.active {
+    color: var(--blue-700);
+    border-bottom-color: var(--blue-700);
+  }
+
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 4rem 1.25rem;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    margin-bottom: 1rem;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--slate-700);
+    margin-bottom: 0.3rem;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--slate-300);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--slate-900);
+    background: #fff;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--blue-600);
+    outline-offset: -1px;
+  }
+
+  .field { margin-bottom: 0.9rem; }
+
+  textarea { resize: vertical; min-height: 4rem; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--blue-600);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn:hover { background: var(--blue-700); }
+
+  .btn.secondary {
+    background: #fff;
+    color: var(--slate-700);
+    border: 1px solid var(--slate-300);
+  }
+
+  .btn.secondary:hover { background: var(--slate-100); }
+
+  .btn.danger {
+    background: #fff;
+    color: var(--red-600);
+    border: 1px solid #fecaca;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .btn.danger:hover { background: #fef2f2; }
+
+  .btn.small {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .error-text {
+    color: var(--red-600);
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+  }
+
+  .form-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: var(--red-600);
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .success-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .client-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .client-card {
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    background: var(--slate-50);
+  }
+
+  .client-card .name {
+    font-weight: 700;
+    color: var(--slate-900);
+    margin-bottom: 0.25rem;
+  }
+
+  .client-card .detail {
+    font-size: 0.82rem;
+    color: var(--slate-500);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .empty-state {
+    color: var(--slate-500);
+    font-size: 0.9rem;
+    padding: 1rem 0;
+    text-align: center;
+  }
+
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .items-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--slate-500);
+    padding: 0 0.4rem 0.5rem 0.4rem;
+    border-bottom: 1px solid var(--slate-200);
+  }
+
+  .items-table td {
+    padding: 0.4rem;
+    vertical-align: middle;
+  }
+
+  .items-table .col-total {
+    text-align: right;
+    font-weight: 600;
+    color: var(--slate-900);
+    white-space: nowrap;
+  }
+
+  .items-table .col-remove { width: 2.5rem; text-align: center; }
+
+  .item-row-mobile-label {
+    display: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--slate-500);
+    margin-bottom: 0.2rem;
+  }
+
+  .items-actions {
+    margin-top: 0.5rem;
+  }
+
+  .totals-box {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--slate-200);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+  }
+
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 260px;
+    font-size: 0.9rem;
+    color: var(--slate-700);
+  }
+
+  .totals-row.grand {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    border-top: 1px solid var(--slate-200);
+    padding-top: 0.4rem;
+    margin-top: 0.2rem;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .filter-bar button {
+    background: #fff;
+    border: 1px solid var(--slate-300);
+    color: var(--slate-700);
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .filter-bar button:hover { background: var(--slate-100); }
+
+  .filter-bar button.active {
+    background: var(--blue-600);
+    border-color: var(--blue-600);
+    color: #fff;
+  }
+
+  .invoice-card {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-left: 4px solid var(--slate-200);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+  }
+
+  .invoice-card.overdue-highlight {
+    border-color: var(--red-600);
+    border-left-width: 4px;
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.15);
+  }
+
+  .invoice-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    cursor: pointer;
+    flex-wrap: wrap;
+  }
+
+  .invoice-summary:hover { background: var(--slate-50); }
+
+  .invoice-main-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 160px;
+  }
+
+  .invoice-number {
+    font-weight: 700;
+    color: var(--slate-900);
+    font-size: 0.95rem;
+  }
+
+  .invoice-client {
+    font-size: 0.85rem;
+    color: var(--slate-500);
+  }
+
+  .invoice-dates {
+    font-size: 0.78rem;
+    color: var(--slate-500);
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 140px;
+  }
+
+  .invoice-dates .overdue-flag {
+    color: var(--red-600);
+    font-weight: 700;
+  }
+
+  .invoice-right {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .invoice-total {
+    font-weight: 700;
+    color: var(--slate-900);
+    font-size: 1rem;
+    min-width: 90px;
+    text-align: right;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .badge-draft { background: #f3f4f6; color: var(--gray-600); border-color: #d1d5db; }
+  .badge-sent { background: #fef3c7; color: var(--amber-600); border-color: #fde68a; }
+  .badge-paid { background: #dcfce7; color: var(--green-600); border-color: #bbf7d0; }
+  .badge-overdue { background: #fee2e2; color: var(--red-600); border-color: #fecaca; }
+
+  .invoice-detail {
+    display: none;
+    border-top: 1px solid var(--slate-200);
+    padding: 1rem 1.1rem 1.1rem 1.1rem;
+    background: var(--slate-50);
+  }
+
+  .invoice-detail.open { display: block; }
+
+  .invoice-detail-loading {
+    color: var(--slate-500);
+    font-size: 0.85rem;
+  }
+
+  .detail-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .status-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-control select {
+    width: auto;
+    min-width: 130px;
+  }
+
+  .detail-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.75rem;
+    background: #fff;
+  }
+
+  .detail-items-table th, .detail-items-table td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--slate-200);
+  }
+
+  .detail-items-table th {
+    text-align: left;
+    color: var(--slate-500);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+  }
+
+  .detail-items-table td.num, .detail-items-table th.num { text-align: right; }
+
+  .detail-notes {
+    font-size: 0.85rem;
+    color: var(--slate-700);
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.75rem;
+    white-space: pre-wrap;
+  }
+
+  .required-mark { color: var(--red-600); }
+
+  @media (max-width: 640px) {
+    .grid-2 { grid-template-columns: 1fr; gap: 0; }
+
+    .items-table thead { display: none; }
+    .items-table, .items-table tbody, .items-table tr, .items-table td {
+      display: block;
+      width: 100%;
+    }
+    .items-table tr {
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      padding: 0.6rem;
+      margin-bottom: 0.6rem;
+      background: var(--slate-50);
+    }
+    .items-table td {
+      padding: 0.3rem 0;
+    }
+    .items-table .item-row-mobile-label { display: block; }
+    .items-table .col-total { text-align: left; }
+    .items-table .col-remove { text-align: left; }
+
+    .invoice-summary { flex-direction: column; align-items: flex-start; }
+    .invoice-right { width: 100%; justify-content: space-between; }
+
+    .detail-items-table thead { display: none; }
+    .detail-items-table, .detail-items-table tbody, .detail-items-table tr, .detail-items-table td {
+      display: block;
+      width: 100%;
+    }
+    .detail-items-table tr {
+      border-bottom: 1px solid var(--slate-200);
+      padding: 0.4rem 0;
+    }
+    .detail-items-table td { border-bottom: none; padding: 0.15rem 0; }
+    .detail-items-table td.num { text-align: left; }
+
+    .totals-box { align-items: stretch; }
+    .totals-row, .totals-row.grand { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="brand">
+      Invoice Generator
+      <small>Nova Vey Engineering</small>
+    </div>
+    <nav class="tabs">
+      <button type="button" class="tab-btn active" data-tab="clients">Clients</button>
+      <button type="button" class="tab-btn" data-tab="create">Create Invoice</button>
+      <button type="button" class="tab-btn" data-tab="invoices">Invoices</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section id="tab-clients" class="tab-panel active">
+    <div class="card">
+      <div class="section-title">Add Client</div>
+      <div id="client-form-error"></div>
+      <form id="client-form">
+        <div class="grid-2">
+          <div>
+            <div class="field">
+              <label for="client-name">Name <span class="required-mark">*</span></label>
+              <input type="text" id="client-name" name="name" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="client-email">Email</label>
+              <input type="email" id="client-email" name="email" autocomplete="off">
+            </div>
+          </div>
+          <div>
+            <div class="field">
+              <label for="client-phone">Phone</label>
+              <input type="tel" id="client-phone" name="phone" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="client-address">Address</label>
+              <input type="text" id="client-address" name="address" autocomplete="off">
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn">Add Client</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Clients</div>
+      <div id="client-list" class="client-list"></div>
+    </div>
+  </section>
+
+  <section id="tab-create" class="tab-panel">
+    <div id="invoice-success"></div>
+    <div class="card">
+      <div class="section-title">Create Invoice</div>
+      <div id="invoice-form-error"></div>
+      <form id="invoice-form">
+        <div class="grid-2">
+          <div>
+            <div class="field">
+              <label for="invoice-client">Client <span class="required-mark">*</span></label>
+              <select id="invoice-client" name="client_id">
+                <option value="">Select a client...</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="invoice-tax-rate">Tax Rate (%)</label>
+              <input type="number" id="invoice-tax-rate" name="tax_rate" value="0" min="0" step="0.01">
+            </div>
+          </div>
+          <div>
+            <div class="field">
+              <label for="invoice-issue-date">Issue Date</label>
+              <input type="date" id="invoice-issue-date" name="issue_date">
+            </div>
+            <div class="field">
+              <label for="invoice-due-date">Due Date</label>
+              <input type="date" id="invoice-due-date" name="due_date">
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 1.25rem;">Line Items</div>
+        <table class="items-table" id="items-table">
+          <thead>
+            <tr>
+              <th style="width: 42%;">Description</th>
+              <th style="width: 14%;">Qty</th>
+              <th style="width: 18%;">Unit Price</th>
+              <th style="width: 18%;">Line Total</th>
+              <th class="col-remove"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+        <div class="items-actions">
+          <button type="button" id="add-row-btn" class="btn secondary small">+ Add Row</button>
+        </div>
+
+        <div class="totals-box">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span id="calc-subtotal">$0.00</span>
+          </div>
+          <div class="totals-row">
+            <span>Tax</span>
+            <span id="calc-tax">$0.00</span>
+          </div>
+          <div class="totals-row grand">
+            <span>Total</span>
+            <span id="calc-total">$0.00</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 1.25rem;">
+          <label for="invoice-notes">Notes</label>
+          <textarea id="invoice-notes" name="notes"></textarea>
+        </div>
+
+        <button type="submit" class="btn">Create Invoice</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="tab-invoices" class="tab-panel">
+    <div class="filter-bar" id="status-filter-bar">
+      <button type="button" class="filter-btn active" data-status="">All</button>
+      <button type="button" class="filter-btn" data-status="draft">Draft</button>
+      <button type="button" class="filter-btn" data-status="sent">Sent</button>
+      <button type="button" class="filter-btn" data-status="paid">Paid</button>
+      <button type="button" class="filter-btn" data-status="overdue">Overdue</button>
+    </div>
+    <div id="invoice-list"></div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var STATUS_OPTIONS = ["draft", "sent", "paid", "overdue"];
+
+  function el(tag, opts) {
+    var e = document.createElement(tag);
+    opts = opts || {};
+    if (opts.className) e.className = opts.className;
+    if (opts.text !== undefined) e.textContent = opts.text;
+    if (opts.html !== undefined) e.innerHTML = opts.html;
+    if (opts.attrs) {
+      Object.keys(opts.attrs).forEach(function (k) {
+        e.setAttribute(k, opts.attrs[k]);
+      });
+    }
+    return e;
+  }
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function toNumber(v) {
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatCurrency(n) {
+    n = toNumber(n);
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(d) {
+    if (!d) return "-";
+    var str = String(d).slice(0, 10);
+    var parts = str.split("-");
+    if (parts.length !== 3) return str;
+    return parts[1] + "/" + parts[2] + "/" + parts[0];
+  }
+
+  function todayISO() {
+    var now = new Date();
+    var m = String(now.getMonth() + 1).padStart(2, "0");
+    var d = String(now.getDate()).padStart(2, "0");
+    return now.getFullYear() + "-" + m + "-" + d;
+  }
+
+  function isPastDue(dueDate, status) {
+    if (!dueDate || status === "paid") return false;
+    var due = String(dueDate).slice(0, 10);
+    return due < todayISO();
+  }
+
+  function apiFetch(url, options) {
+    return fetch(url, options).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          var err = new Error(body.error || body.message || ("Request failed (" + res.status + ")"));
+          err.status = res.status;
+          throw err;
+        });
+      }
+      if (res.status === 204) return null;
+      return res.json();
+    });
+  }
+
+  // ---------- Tabs ----------
+
+  var tabButtons = document.querySelectorAll(".tab-btn");
+  var tabPanels = document.querySelectorAll(".tab-panel");
+
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var target = btn.getAttribute("data-tab");
+      tabButtons.forEach(function (b) { b.classList.toggle("active", b === btn); });
+      tabPanels.forEach(function (p) {
+        p.classList.toggle("active", p.id === "tab-" + target);
+      });
+      if (target === "create") {
+        populateClientSelect();
+      } else if (target === "invoices") {
+        loadInvoices();
+      } else if (target === "clients") {
+        loadClients();
+      }
+    });
+  });
+
+  // ---------- Clients Tab ----------
+
+  var clientListEl = document.getElementById("client-list");
+  var clientForm = document.getElementById("client-form");
+  var clientFormError = document.getElementById("client-form-error");
+  var cachedClients = [];
+
+  function loadClients() {
+    clientListEl.innerHTML = '<div class="empty-state">Loading clients...</div>';
+    return apiFetch("/api/clients")
+      .then(function (clients) {
+        cachedClients = clients || [];
+        renderClientList(cachedClients);
+        return cachedClients;
+      })
+      .catch(function (err) {
+        clientListEl.innerHTML = "";
+        clientListEl.appendChild(el("div", { className: "empty-state", text: "Failed to load clients: " + err.message }));
+      });
+  }
+
+  function renderClientList(clients) {
+    clientListEl.innerHTML = "";
+    if (!clients || clients.length === 0) {
+      clientListEl.appendChild(el("div", { className: "empty-state", text: "No clients yet. Add one above." }));
+      return;
+    }
+    clients.forEach(function (c) {
+      var card = el("div", { className: "client-card" });
+      card.appendChild(el("div", { className: "name", text: c.name }));
+      var lines = [];
+      if (c.email) lines.push("Email: " + escapeHtml(c.email));
+      if (c.phone) lines.push("Phone: " + escapeHtml(c.phone));
+      if (c.address) lines.push("Address: " + escapeHtml(c.address));
+      var detail = el("div", { className: "detail" });
+      detail.innerHTML = lines.length ? lines.join("<br>") : "No additional details";
+      card.appendChild(detail);
+      clientListEl.appendChild(card);
+    });
+  }
+
+  clientForm.addEventListener("submit", function (evt) {
+    evt.preventDefault();
+    clientFormError.innerHTML = "";
+
+    var name = document.getElementById("client-name").value.trim();
+    var email = document.getElementById("client-email").value.trim();
+    var phone = document.getElementById("client-phone").value.trim();
+    var address = document.getElementById("client-address").value.trim();
+
+    if (!name) {
+      clientFormError.appendChild(el("div", { className: "form-error", text: "Name is required." }));
+      return;
+    }
+
+    var submitBtn = clientForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+
+    apiFetch("/api/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, email: email, phone: phone, address: address })
+    })
+      .then(function () {
+        clientForm.reset();
+        return loadClients();
+      })
+      .catch(function (err) {
+        clientFormError.appendChild(el("div", { className: "form-error", text: err.message }));
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+      });
+  });
+
+  // ---------- Create Invoice Tab ----------
+
+  var invoiceClientSelect = document.getElementById("invoice-client");
+  var itemsTbody = document.getElementById("items-tbody");
+  var addRowBtn = document.getElementById("add-row-btn");
+  var invoiceForm = document.getElementById("invoice-form");
+  var invoiceFormError = document.getElementById("invoice-form-error");
+  var invoiceSuccess = document.getElementById("invoice-success");
+
+  document.getElementById("invoice-issue-date").value = todayISO();
+
+  function populateClientSelect() {
+    var currentValue = invoiceClientSelect.value;
+    return apiFetch("/api/clients")
+      .then(function (clients) {
+        cachedClients = clients || [];
+        invoiceClientSelect.innerHTML = "";
+        invoiceClientSelect.appendChild(el("option", { text: "Select a client...", attrs: { value: "" } }));
+        cachedClients.forEach(function (c) {
+          var opt = el("option", { text: c.name, attrs: { value: c.id } });
+          invoiceClientSelect.appendChild(opt);
+        });
+        if (currentValue) invoiceClientSelect.value = currentValue;
+      })
+      .catch(function () {
+        invoiceClientSelect.innerHTML = "";
+        invoiceClientSelect.appendChild(el("option", { text: "Failed to load clients", attrs: { value: "" } }));
+      });
+  }
+
+  function createItemRow() {
+    var tr = el("tr");
+
+    var tdDesc = el("td");
+    tdDesc.appendChild(el("div", { className: "item-row-mobile-label", text: "Description" }));
+    var descInput = el("input", { attrs: { type: "text", placeholder: "Description" } });
+    descInput.className = "item-desc";
+    tdDesc.appendChild(descInput);
+    tr.appendChild(tdDesc);
+
+    var tdQty = el("td");
+    tdQty.appendChild(el("div", { className: "item-row-mobile-label", text: "Qty" }));
+    var qtyInput = el("input", { attrs: { type: "number", min: "0", step: "1", value: "1" } });
+    qtyInput.className = "item-qty";
+    tdQty.appendChild(qtyInput);
+    tr.appendChild(tdQty);
+
+    var tdPrice = el("td");
+    tdPrice.appendChild(el("div", { className: "item-row-mobile-label", text: "Unit Price" }));
+    var priceInput = el("input", { attrs: { type: "number", min: "0", step: "0.01", value: "0" } });
+    priceInput.className = "item-price";
+    tdPrice.appendChild(priceInput);
+    tr.appendChild(tdPrice);
+
+    var tdTotal = el("td", { className: "col-total" });
+    tdTotal.appendChild(el("div", { className: "item-row-mobile-label", text: "Line Total" }));
+    var totalSpan = el("span", { className: "item-line-total", text: "$0.00" });
+    tdTotal.appendChild(totalSpan);
+    tr.appendChild(tdTotal);
+
+    var tdRemove = el("td", { className: "col-remove" });
+    var removeBtn = el("button", { className: "btn danger", text: "×", attrs: { type: "button", "aria-label": "Remove row" } });
+    removeBtn.addEventListener("click", function () {
+      if (itemsTbody.children.length > 1) {
+        tr.remove();
+      } else {
+        descInput.value = "";
+        qtyInput.value = "1";
+        priceInput.value = "0";
+      }
+      recalcTotals();
+    });
+    tdRemove.appendChild(removeBtn);
+    tr.appendChild(tdRemove);
+
+    [qtyInput, priceInput].forEach(function (input) {
+      input.addEventListener("input", recalcTotals);
+    });
+    descInput.addEventListener("input", recalcTotals);
+
+    return tr;
+  }
+
+  function addItemRow() {
+    itemsTbody.appendChild(createItemRow());
+    recalcTotals();
+  }
+
+  addRowBtn.addEventListener("click", addItemRow);
+
+  function getRowsData() {
+    return Array.prototype.map.call(itemsTbody.querySelectorAll("tr"), function (tr) {
+      var description = tr.querySelector(".item-desc").value.trim();
+      var quantity = toNumber(tr.querySelector(".item-qty").value);
+      var unit_price = toNumber(tr.querySelector(".item-price").value);
+      return { description: description, quantity: quantity, unit_price: unit_price };
+    });
+  }
+
+  function recalcTotals() {
+    var rows = itemsTbody.querySelectorAll("tr");
+    var subtotal = 0;
+
+    rows.forEach(function (tr) {
+      var qty = toNumber(tr.querySelector(".item-qty").value);
+      var price = toNumber(tr.querySelector(".item-price").value);
+      var lineTotal = qty * price;
+      subtotal += lineTotal;
+      tr.querySelector(".item-line-total").textContent = formatCurrency(lineTotal);
+    });
+
+    var taxRate = toNumber(document.getElementById("invoice-tax-rate").value);
+    var taxAmount = subtotal * (taxRate / 100);
+    var total = subtotal + taxAmount;
+
+    document.getElementById("calc-subtotal").textContent = formatCurrency(subtotal);
+    document.getElementById("calc-tax").textContent = formatCurrency(taxAmount);
+    document.getElementById("calc-total").textContent = formatCurrency(total);
+  }
+
+  document.getElementById("invoice-tax-rate").addEventListener("input", recalcTotals);
+
+  addItemRow();
+
+  invoiceForm.addEventListener("submit", function (evt) {
+    evt.preventDefault();
+    invoiceFormError.innerHTML = "";
+    invoiceSuccess.innerHTML = "";
+
+    var clientId = invoiceClientSelect.value;
+    var issueDate = document.getElementById("invoice-issue-date").value;
+    var dueDate = document.getElementById("invoice-due-date").value;
+    var taxRate = toNumber(document.getElementById("invoice-tax-rate").value);
+    var notes = document.getElementById("invoice-notes").value.trim();
+    var items = getRowsData().filter(function (item) { return item.description; });
+
+    if (!clientId) {
+      invoiceFormError.appendChild(el("div", { className: "form-error", text: "Please select a client." }));
+      return;
+    }
+    if (items.length === 0) {
+      invoiceFormError.appendChild(el("div", { className: "form-error", text: "Please add at least one line item with a description." }));
+      return;
+    }
+
+    var submitBtn = invoiceForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+
+    apiFetch("/api/invoices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: clientId,
+        issue_date: issueDate,
+        due_date: dueDate,
+        tax_rate: taxRate,
+        notes: notes,
+        items: items
+      })
+    })
+      .then(function (invoice) {
+        invoiceSuccess.innerHTML = "";
+        var box = el("div", { className: "success-box" });
+        box.appendChild(el("span", { text: "Invoice " + (invoice.invoice_number || "") + " created." }));
+        var link = el("a", {
+          className: "btn small",
+          text: "Download PDF",
+          attrs: { href: "/api/invoices/" + invoice.id + "/pdf" }
+        });
+        box.appendChild(link);
+        invoiceSuccess.appendChild(box);
+
+        invoiceForm.reset();
+        document.getElementById("invoice-issue-date").value = todayISO();
+        itemsTbody.innerHTML = "";
+        addItemRow();
+        invoiceClientSelect.value = "";
+        recalcTotals();
+      })
+      .catch(function (err) {
+        invoiceFormError.appendChild(el("div", { className: "form-error", text: err.message }));
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+      });
+  });
+
+  // ---------- Invoices Tab ----------
+
+  var invoiceListEl = document.getElementById("invoice-list");
+  var filterButtons = document.querySelectorAll(".filter-btn");
+  var currentStatusFilter = "";
+  var invoiceDetailCache = {};
+  var openInvoiceIds = {};
+
+  filterButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      currentStatusFilter = btn.getAttribute("data-status") || "";
+      filterButtons.forEach(function (b) { b.classList.toggle("active", b === btn); });
+      loadInvoices();
+    });
+  });
+
+  function loadInvoices() {
+    invoiceListEl.innerHTML = '<div class="empty-state">Loading invoices...</div>';
+    var url = "/api/invoices" + (currentStatusFilter ? "?status=" + encodeURIComponent(currentStatusFilter) : "");
+    return apiFetch(url)
+      .then(function (invoices) {
+        renderInvoiceList(invoices || []);
+      })
+      .catch(function (err) {
+        invoiceListEl.innerHTML = "";
+        invoiceListEl.appendChild(el("div", { className: "empty-state", text: "Failed to load invoices: " + err.message }));
+      });
+  }
+
+  function badgeHtml(status) {
+    var cls = "badge-" + status;
+    return '<span class="badge ' + cls + '">' + escapeHtml(status) + "</span>";
+  }
+
+  function renderInvoiceList(invoices) {
+    invoiceListEl.innerHTML = "";
+    if (!invoices || invoices.length === 0) {
+      invoiceListEl.appendChild(el("div", { className: "empty-state", text: "No invoices found." }));
+      return;
+    }
+
+    invoices.forEach(function (inv) {
+      var card = el("div", { className: "invoice-card" });
+      card.dataset.invoiceId = inv.id;
+
+      var overdueHighlight = isPastDue(inv.due_date, inv.status);
+      if (overdueHighlight) card.classList.add("overdue-highlight");
+
+      var summary = el("div", { className: "invoice-summary" });
+
+      var mainInfo = el("div", { className: "invoice-main-info" });
+      mainInfo.appendChild(el("div", { className: "invoice-number", text: inv.invoice_number }));
+      mainInfo.appendChild(el("div", { className: "invoice-client", text: inv.client_name || "" }));
+      summary.appendChild(mainInfo);
+
+      var dates = el("div", { className: "invoice-dates" });
+      dates.appendChild(el("span", { text: "Issued: " + formatDate(inv.issue_date) }));
+      var dueLine = el("span", { text: "Due: " + formatDate(inv.due_date) });
+      if (overdueHighlight) dueLine.classList.add("overdue-flag");
+      dates.appendChild(dueLine);
+      summary.appendChild(dates);
+
+      var right = el("div", { className: "invoice-right" });
+      right.appendChild(el("div", { className: "invoice-total", text: formatCurrency(inv.total) }));
+      var badgeWrap = el("span");
+      badgeWrap.innerHTML = badgeHtml(inv.status);
+      badgeWrap.className = "invoice-badge-slot";
+      right.appendChild(badgeWrap);
+      summary.appendChild(right);
+
+      card.appendChild(summary);
+
+      var detailWrap = el("div", { className: "invoice-detail" });
+      card.appendChild(detailWrap);
+
+      summary.addEventListener("click", function () {
+        toggleInvoiceDetail(inv.id, detailWrap, badgeWrap, card);
+      });
+
+      invoiceListEl.appendChild(card);
+
+      if (openInvoiceIds[inv.id]) {
+        toggleInvoiceDetail(inv.id, detailWrap, badgeWrap, card, true);
+      }
+    });
+  }
+
+  function toggleInvoiceDetail(invoiceId, detailWrap, badgeWrap, card, forceOpen) {
+    var isOpen = detailWrap.classList.contains("open");
+    if (isOpen && !forceOpen) {
+      detailWrap.classList.remove("open");
+      delete openInvoiceIds[invoiceId];
+      return;
+    }
+
+    detailWrap.classList.add("open");
+    openInvoiceIds[invoiceId] = true;
+
+    if (invoiceDetailCache[invoiceId]) {
+      renderInvoiceDetail(invoiceDetailCache[invoiceId], detailWrap, badgeWrap, card);
+      return;
+    }
+
+    detailWrap.innerHTML = '<div class="invoice-detail-loading">Loading details...</div>';
+
+    apiFetch("/api/invoices/" + invoiceId)
+      .then(function (detail) {
+        invoiceDetailCache[invoiceId] = detail;
+        renderInvoiceDetail(detail, detailWrap, badgeWrap, card);
+      })
+      .catch(function (err) {
+        detailWrap.innerHTML = "";
+        detailWrap.appendChild(el("div", { className: "form-error", text: "Failed to load invoice: " + err.message }));
+      });
+  }
+
+  function renderInvoiceDetail(detail, detailWrap, badgeWrap, card) {
+    detailWrap.innerHTML = "";
+
+    var controls = el("div", { className: "detail-controls" });
+
+    var statusControl = el("div", { className: "status-control" });
+    statusControl.appendChild(el("label", { text: "Status:", attrs: { style: "margin-bottom:0;" } }));
+    var statusSelect = el("select");
+    STATUS_OPTIONS.forEach(function (s) {
+      var opt = el("option", { text: s.charAt(0).toUpperCase() + s.slice(1), attrs: { value: s } });
+      statusSelect.appendChild(opt);
+    });
+    statusSelect.value = detail.status;
+    statusSelect.addEventListener("click", function (e) { e.stopPropagation(); });
+    statusSelect.addEventListener("change", function (e) {
+      e.stopPropagation();
+      var newStatus = statusSelect.value;
+      statusSelect.disabled = true;
+      apiFetch("/api/invoices/" + detail.id + "/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      })
+        .then(function (updated) {
+          detail.status = updated.status;
+          invoiceDetailCache[detail.id] = updated;
+          badgeWrap.innerHTML = badgeHtml(updated.status);
+          var overdueHighlight = isPastDue(updated.due_date, updated.status);
+          card.classList.toggle("overdue-highlight", overdueHighlight);
+        })
+        .catch(function (err) {
+          alert("Failed to update status: " + err.message);
+          statusSelect.value = detail.status;
+        })
+        .finally(function () {
+          statusSelect.disabled = false;
+        });
+    });
+    statusControl.appendChild(statusSelect);
+    controls.appendChild(statusControl);
+
+    var pdfLink = el("a", {
+      className: "btn small secondary",
+      text: "Download PDF",
+      attrs: { href: "/api/invoices/" + detail.id + "/pdf" }
+    });
+    pdfLink.addEventListener("click", function (e) { e.stopPropagation(); });
+    controls.appendChild(pdfLink);
+
+    detailWrap.appendChild(controls);
+
+    if (detail.notes) {
+      detailWrap.appendChild(el("div", { className: "detail-notes", text: detail.notes }));
+    }
+
+    var table = el("table", { className: "detail-items-table" });
+    var thead = el("thead");
+    var headRow = el("tr");
+    headRow.appendChild(el("th", { text: "Description" }));
+    headRow.appendChild(el("th", { className: "num", text: "Qty" }));
+    headRow.appendChild(el("th", { className: "num", text: "Unit Price" }));
+    headRow.appendChild(el("th", { className: "num", text: "Line Total" }));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = el("tbody");
+    (detail.items || []).forEach(function (item) {
+      var tr = el("tr");
+      tr.appendChild(el("td", { text: item.description }));
+      tr.appendChild(el("td", { className: "num", text: item.quantity }));
+      tr.appendChild(el("td", { className: "num", text: formatCurrency(item.unit_price) }));
+      tr.appendChild(el("td", { className: "num", text: formatCurrency(item.line_total) }));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    detailWrap.appendChild(table);
+
+    var totalsBox = el("div", { className: "totals-box" });
+    var subRow = el("div", { className: "totals-row" });
+    subRow.appendChild(el("span", { text: "Subtotal" }));
+    subRow.appendChild(el("span", { text: formatCurrency(detail.subtotal) }));
+    totalsBox.appendChild(subRow);
+
+    var taxRow = el("div", { className: "totals-row" });
+    taxRow.appendChild(el("span", { text: "Tax (" + toNumber(detail.tax_rate) + "%)" }));
+    taxRow.appendChild(el("span", { text: formatCurrency(detail.tax_amount) }));
+    totalsBox.appendChild(taxRow);
+
+    var totalRow = el("div", { className: "totals-row grand" });
+    totalRow.appendChild(el("span", { text: "Total" }));
+    totalRow.appendChild(el("span", { text: formatCurrency(detail.total) }));
+    totalsBox.appendChild(totalRow);
+
+    detailWrap.appendChild(totalsBox);
+  }
+
+  // ---------- Init ----------
+
+  loadClients();
+})();
+</script>
+
+</body>
+</html>
