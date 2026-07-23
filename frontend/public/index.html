@@ -243,6 +243,13 @@
     background: var(--slate-50);
   }
 
+  .client-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
   .client-card .name {
     font-weight: 700;
     color: var(--slate-900);
@@ -254,6 +261,86 @@
     color: var(--slate-500);
     line-height: 1.5;
     word-break: break-word;
+  }
+
+  .client-delete-btn {
+    background: none;
+    border: none;
+    color: var(--slate-500);
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .client-delete-btn:hover {
+    background: #fef2f2;
+    color: var(--red-600);
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 100;
+  }
+
+  .modal-overlay.open {
+    display: flex;
+  }
+
+  .modal-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.25);
+  }
+
+  .modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--slate-900);
+    margin-bottom: 0.6rem;
+  }
+
+  .modal-body {
+    font-size: 0.9rem;
+    color: var(--slate-700);
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-body strong {
+    color: var(--slate-900);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+
+  .btn.danger-solid {
+    background: var(--red-600);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn.danger-solid:hover {
+    background: #b91c1c;
   }
 
   .empty-state {
@@ -702,6 +789,17 @@
 
 </main>
 
+<div class="modal-overlay" id="delete-confirm-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Delete client?</div>
+    <div class="modal-body" id="delete-confirm-body"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn secondary" id="delete-confirm-cancel">Cancel</button>
+      <button type="button" class="btn danger-solid" id="delete-confirm-confirm">Delete Client</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -828,7 +926,20 @@
     }
     clients.forEach(function (c) {
       var card = el("div", { className: "client-card" });
-      card.appendChild(el("div", { className: "name", text: c.name }));
+
+      var header = el("div", { className: "client-card-header" });
+      header.appendChild(el("div", { className: "name", text: c.name }));
+      var deleteBtn = el("button", {
+        className: "client-delete-btn",
+        text: "Delete",
+        attrs: { type: "button", "aria-label": "Delete " + c.name, "data-client-id": c.id }
+      });
+      deleteBtn.addEventListener("click", function () {
+        openDeleteConfirm(c);
+      });
+      header.appendChild(deleteBtn);
+      card.appendChild(header);
+
       var lines = [];
       if (c.email) lines.push("Email: " + escapeHtml(c.email));
       if (c.phone) lines.push("Phone: " + escapeHtml(c.phone));
@@ -839,6 +950,56 @@
       clientListEl.appendChild(card);
     });
   }
+
+  // ---------- Delete Client Confirmation ----------
+
+  var deleteOverlay = document.getElementById("delete-confirm-overlay");
+  var deleteBody = document.getElementById("delete-confirm-body");
+  var deleteCancelBtn = document.getElementById("delete-confirm-cancel");
+  var deleteConfirmBtn = document.getElementById("delete-confirm-confirm");
+  var pendingDeleteClient = null;
+
+  function openDeleteConfirm(client) {
+    pendingDeleteClient = client;
+    deleteBody.innerHTML =
+      "Are you sure you want to delete <strong>" + escapeHtml(client.name) + "</strong>? " +
+      "This will permanently clear all of this client's info (name, email, phone, address) and cannot be undone. " +
+      "Any existing invoices for this client will be kept but no longer linked to a client.";
+    deleteOverlay.classList.add("open");
+    deleteConfirmBtn.disabled = false;
+    deleteConfirmBtn.textContent = "Delete Client";
+  }
+
+  function closeDeleteConfirm() {
+    deleteOverlay.classList.remove("open");
+    pendingDeleteClient = null;
+  }
+
+  deleteCancelBtn.addEventListener("click", closeDeleteConfirm);
+  deleteOverlay.addEventListener("click", function (evt) {
+    if (evt.target === deleteOverlay) closeDeleteConfirm();
+  });
+  document.addEventListener("keydown", function (evt) {
+    if (evt.key === "Escape" && deleteOverlay.classList.contains("open")) closeDeleteConfirm();
+  });
+
+  deleteConfirmBtn.addEventListener("click", function () {
+    if (!pendingDeleteClient) return;
+    var clientId = pendingDeleteClient.id;
+    deleteConfirmBtn.disabled = true;
+    deleteConfirmBtn.textContent = "Deleting...";
+
+    apiFetch("/api/clients/" + clientId, { method: "DELETE" })
+      .then(function () {
+        closeDeleteConfirm();
+        return loadClients();
+      })
+      .catch(function (err) {
+        deleteConfirmBtn.disabled = false;
+        deleteConfirmBtn.textContent = "Delete Client";
+        deleteBody.appendChild(el("div", { className: "form-error", text: "Failed to delete: " + err.message }));
+      });
+  });
 
   clientForm.addEventListener("submit", function (evt) {
     evt.preventDefault();

@@ -4,7 +4,7 @@ A full-stack invoice and receipt generator for small businesses. Manage clients,
 
 ## Features
 
-- **Client management** — add clients with name, email, phone, and address, and browse them in a searchable list.
+- **Client management** — add clients with name, email, phone, and address, browse them in a searchable list, and delete a client (with an in-app confirmation dialog) when they're no longer needed.
 - **Invoices with line items** — build an invoice against a client with any number of description / quantity / unit price line items.
 - **Live totals** — subtotal, tax, and grand total recalculate in the browser as you edit line items and the tax rate.
 - **Status tracking** — every invoice is `draft`, `sent`, `paid`, or `overdue`; update status inline and filter the invoice list by status.
@@ -77,6 +77,7 @@ All request/response bodies use JSON with `snake_case` field names.
 |--------|-----------------------------|-------------------------------------------------------------------------------|
 | GET    | `/api/clients`               | List all clients, ordered by name ascending.                                 |
 | POST   | `/api/clients`               | Create a client. Body: `{ name, email, phone, address }` (`name` required). |
+| DELETE | `/api/clients/:id`            | Delete a client. Existing invoices are kept but unlinked (`client_id` set to `NULL`). |
 | GET    | `/api/invoices`               | List invoices, newest first. Optional `?status=draft\|sent\|paid\|overdue` filter. |
 | GET    | `/api/invoices/:id`           | Get full invoice detail, including client and line items.                    |
 | POST   | `/api/invoices`               | Create an invoice. Body: `{ client_id, issue_date, due_date, tax_rate, notes, items: [{ description, quantity, unit_price }] }`. |
