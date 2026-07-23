@@ -791,11 +791,11 @@
 
 <div class="modal-overlay" id="delete-confirm-overlay">
   <div class="modal-box">
-    <div class="modal-title">Delete client?</div>
+    <div class="modal-title" id="delete-confirm-title">Delete?</div>
     <div class="modal-body" id="delete-confirm-body"></div>
     <div class="modal-actions">
       <button type="button" class="btn secondary" id="delete-confirm-cancel">Cancel</button>
-      <button type="button" class="btn danger-solid" id="delete-confirm-confirm">Delete Client</button>
+      <button type="button" class="btn danger-solid" id="delete-confirm-confirm">Delete</button>
     </div>
   </div>
 </div>
@@ -951,52 +951,82 @@
     });
   }
 
-  // ---------- Delete Client Confirmation ----------
+  // ---------- Generic Delete Confirmation Modal ----------
 
   var deleteOverlay = document.getElementById("delete-confirm-overlay");
+  var deleteTitle = document.getElementById("delete-confirm-title");
   var deleteBody = document.getElementById("delete-confirm-body");
   var deleteCancelBtn = document.getElementById("delete-confirm-cancel");
   var deleteConfirmBtn = document.getElementById("delete-confirm-confirm");
-  var pendingDeleteClient = null;
+  var pendingDelete = null;
 
-  function openDeleteConfirm(client) {
-    pendingDeleteClient = client;
-    deleteBody.innerHTML =
-      "Are you sure you want to delete <strong>" + escapeHtml(client.name) + "</strong>? " +
-      "This will permanently clear all of this client's info (name, email, phone, address) and cannot be undone. " +
-      "Any existing invoices for this client will be kept but no longer linked to a client.";
+  function openConfirmModal(opts) {
+    pendingDelete = opts;
+    deleteTitle.textContent = opts.title;
+    deleteBody.innerHTML = opts.bodyHtml;
+    deleteConfirmBtn.textContent = opts.confirmLabel;
     deleteOverlay.classList.add("open");
     deleteConfirmBtn.disabled = false;
-    deleteConfirmBtn.textContent = "Delete Client";
   }
 
-  function closeDeleteConfirm() {
+  function closeConfirmModal() {
     deleteOverlay.classList.remove("open");
-    pendingDeleteClient = null;
+    pendingDelete = null;
   }
 
-  deleteCancelBtn.addEventListener("click", closeDeleteConfirm);
+  function openDeleteConfirm(client) {
+    openConfirmModal({
+      title: "Delete client?",
+      confirmLabel: "Delete Client",
+      bodyHtml:
+        "Are you sure you want to delete <strong>" + escapeHtml(client.name) + "</strong>? " +
+        "This will permanently clear all of this client's info (name, email, phone, address) and cannot be undone. " +
+        "Any existing invoices for this client will be kept but no longer linked to a client.",
+      onConfirm: function () {
+        return apiFetch("/api/clients/" + client.id, { method: "DELETE" }).then(loadClients);
+      }
+    });
+  }
+
+  function openInvoiceDeleteConfirm(invoice) {
+    openConfirmModal({
+      title: "Delete invoice?",
+      confirmLabel: "Delete Invoice",
+      bodyHtml:
+        "Are you sure you want to delete invoice <strong>" + escapeHtml(invoice.invoice_number) + "</strong>? " +
+        "This will permanently delete the invoice and all of its line items and cannot be undone.",
+      onConfirm: function () {
+        return apiFetch("/api/invoices/" + invoice.id, { method: "DELETE" }).then(function () {
+          delete invoiceDetailCache[invoice.id];
+          delete openInvoiceIds[invoice.id];
+          return loadInvoices();
+        });
+      }
+    });
+  }
+
+  deleteCancelBtn.addEventListener("click", closeConfirmModal);
   deleteOverlay.addEventListener("click", function (evt) {
-    if (evt.target === deleteOverlay) closeDeleteConfirm();
+    if (evt.target === deleteOverlay) closeConfirmModal();
   });
   document.addEventListener("keydown", function (evt) {
-    if (evt.key === "Escape" && deleteOverlay.classList.contains("open")) closeDeleteConfirm();
+    if (evt.key === "Escape" && deleteOverlay.classList.contains("open")) closeConfirmModal();
   });
 
   deleteConfirmBtn.addEventListener("click", function () {
-    if (!pendingDeleteClient) return;
-    var clientId = pendingDeleteClient.id;
+    if (!pendingDelete) return;
+    var opts = pendingDelete;
+    var originalLabel = opts.confirmLabel;
     deleteConfirmBtn.disabled = true;
     deleteConfirmBtn.textContent = "Deleting...";
 
-    apiFetch("/api/clients/" + clientId, { method: "DELETE" })
+    opts.onConfirm()
       .then(function () {
-        closeDeleteConfirm();
-        return loadClients();
+        closeConfirmModal();
       })
       .catch(function (err) {
         deleteConfirmBtn.disabled = false;
-        deleteConfirmBtn.textContent = "Delete Client";
+        deleteConfirmBtn.textContent = originalLabel;
         deleteBody.appendChild(el("div", { className: "form-error", text: "Failed to delete: " + err.message }));
       });
   });
@@ -1379,13 +1409,28 @@
     statusControl.appendChild(statusSelect);
     controls.appendChild(statusControl);
 
+    var detailActions = el("div", { attrs: { style: "display:flex; gap:0.5rem; flex-wrap:wrap;" } });
+
     var pdfLink = el("a", {
       className: "btn small secondary",
       text: "Download PDF",
       attrs: { href: "/api/invoices/" + detail.id + "/pdf" }
     });
     pdfLink.addEventListener("click", function (e) { e.stopPropagation(); });
-    controls.appendChild(pdfLink);
+    detailActions.appendChild(pdfLink);
+
+    var deleteInvoiceBtn = el("button", {
+      className: "btn small danger",
+      text: "Delete Invoice",
+      attrs: { type: "button" }
+    });
+    deleteInvoiceBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openInvoiceDeleteConfirm(detail);
+    });
+    detailActions.appendChild(deleteInvoiceBtn);
+
+    controls.appendChild(detailActions);
 
     detailWrap.appendChild(controls);
 
